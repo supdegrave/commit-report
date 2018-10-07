@@ -118,44 +118,10 @@ function addReportText(string) {
     reportText.push(`${string} \n`);
 }
 
-function hgOnStdout(data) {
-    const commits = data.toString().trim().split(/\n\n/);
-    allCommits = allCommits.concat(commits);
-}
-
-function hgOnStderror(data) {
-    console.error(`hg log error => ${data.toString()}`);
-}
-
-function hgOnClose(code) {
-    if (!code) {
-        generateCommitReport(allCommits);
-        console.log(reportText.join(''));
-    } else { // non-zero indicates that an error occurred
-        console.log(`child process exited with code ${code}`);
-    }
-};
-
 main();
 
 
 // ##### supporting classes ##################################
-
-// TODO: move to separate file, import
-// class ChangeSet {
-//     constructor(rawChangeset) {
-//         const re = /changeset\:\s+([^$]+)$\n^user\:\s+([^$]+)$\n^date\:\s+([^$]+)$\n^summary\:\s+([^$]+)/m;
-//         const matches = rawChangeset.match(re);
-
-//         if (matches) {
-//             this.changeset = matches[1];
-//             this.date = new Date(matches[3]);
-//             this.summary = matches[4];
-
-//             this.dayOfMonth = this.date.getDate();
-//         }
-//     }
-// }
 
 class ChangeSet {
     constructor(project, commitText) {
