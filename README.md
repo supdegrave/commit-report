@@ -7,7 +7,6 @@ Node.js script which generates a report of Mercurial activity for the prior mont
 
 ## TODO 
 
-* init repo and add to github
 * update hgOnClose to only generate reports / send email once all projects have been queried
 * add instructions in README for sending email
 * Move ChangeSet class into separate file
@@ -25,3 +24,4 @@ Node.js script which generates a report of Mercurial activity for the prior mont
 * extract projects into bash script
 * If only a single project is passed, wrap in array
 * replace `path` with `projects`, an array of objects: { name, path }, update main to forEach over projects, initializing hgLog and assigning event handlers for each project
+* init repo and add to github
