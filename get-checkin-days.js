@@ -26,7 +26,6 @@ const args = [
 ];
 
 let changeSets = [];
-// let allCommits = [];
 let reportText = [];
 let reportSubject = '';
 
@@ -36,14 +35,18 @@ function main() {
     Promise.all(projectCommitsArray$)
         .then(projectCommits$ => {
             projectCommits$.forEach(projectCommits => {
-                const { project, commits } = projectCommits;    
-                const projectChangeSets = commits.map(commit => new ChangeSet(project, commit));
+                const { project, commits } = projectCommits;
+                const projectChangeSets = commits
+                    .map(commit => new ChangeSet(project, commit))
+                    .filter(cs => !!cs.changeset);
+
                 changeSets = changeSets.concat(projectChangeSets);
             });
         })
         .then(() => {
             generateCommitReport();
             console.log(reportText.join(''));
+            // TODO: send email if required arguments are passed
         })
         .catch(console.error);
 }
@@ -54,11 +57,11 @@ async function getProjectCommits(project) {
 
     try {
         return await exec$(cmd, options)
-            .then(response => { 
+            .then(response => {
                 const commits = response.stdout.toString().trim().split(/\n\n/);
                 return { project, commits };
             })
-    } catch(err) {
+    } catch (err) {
         console.error(`error: $err`);
     }
 }
@@ -100,16 +103,25 @@ function generateCommitReport() {
 
     reportSubject = `${lastMonthShortName} ${lastMonthLastDay.getFullYear()}: ${datesWithChangeSets.length} days with commits`;
 
-    addReportText(`-------------------------------------------`);
+    addReportText(`==========================================`);
     addReportText(reportSubject);
-    addReportText(`-------------------------------------------`);
+    addReportText(`==========================================`);
     addReportText(``);
 
     changeSetsByDate.forEach(csbd => {
+        const groupedChangeSets = csbd.changeSets.mapBy(cs => cs.projectName);
+
         addReportText(`${lastMonthShortName} ${csbd.date}: ${csbd.changeSets.length} commit(s)`);
         addReportText(`-------------------------------------------`);
-        csbd.changeSets.forEach(cs => addReportText(`${cs.projectName}: ${cs.changeset} \n => ${cs.summary}`));
-        addReportText(`-------------------------------------------`);
+            projects.forEach(project => {
+                const projectChangeSets = groupedChangeSets.get(project.name);
+
+                if (projectChangeSets instanceof Array) {
+                    addReportText(`project: ${project.name}`);
+                    projectChangeSets.forEach(cs => addReportText(`- ${cs.summary} (${cs.changeset.split(':')[1]})`));
+                    addReportText(`-------------------------------------------`);
+                }
+            });
         addReportText(``);
     });
 }
@@ -139,3 +151,20 @@ class ChangeSet {
     }
 }
 
+Array.prototype.mapBy = function (keyGetter) {
+    const list = this;
+    const map = new Map();
+
+    list.forEach((item) => {
+        const key = keyGetter(item);
+        const collection = map.get(key);
+
+        if (!collection) {
+            map.set(key, [item]);
+        } else {
+            collection.push(item);
+        }
+    });
+
+    return map;
+};
